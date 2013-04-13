@@ -1,21 +1,36 @@
 package edu.brown.cs32.mlazos.server;
 import java.io.*;
 import java.net.*;
+import java.util.List;
+
+import edu.brown.cs32.jcadler.nodeWay.Node;
+import edu.brown.cs32.jcadler.nodeWay.Way;
+import edu.brown.cs32.mlazosjcadler.drawer.Street;
 
 /**
  * Encapsulate IO for the given client {@link Socket}, with a group of
  * other clients in the given {@link ClientPool}.
  */
-public class ClientHandler extends Thread {
+public class ClientHandler extends Thread 
+{
 	private ClientPool _pool;
+	private Boolean _running;
 	private Socket _client;
 	private BufferedReader _input;
 	private PrintWriter _output;
+	private Double minLat;
+	private Double minLong;
+	private Double maxLat;
+	private Double maxLong;
+	private String startID;
+	private String endID;
+	private String street1;
+	private String street2;
 	
 	/**
 	 * Constructs a {@link ClientHandler} on the given client with the given pool.
 	 * 
-	 * @param pool a group of other clients to chat with
+	 * @param - the group of clients
 	 * @param client the client to handle
 	 * @throws IOException if the client socket is invalid
 	 * @throws IllegalArgumentException if pool or client is null
@@ -29,55 +44,46 @@ public class ClientHandler extends Thread {
 		
 		_pool = pool;
 		_client = client;
-		
-		//TODO: Set up the buffered reader and writer for the sockets to communicate with
-		_input = new BufferedReader(new InputStreamReader(_client.getInputStream()));
-		_output = new PrintWriter(_client.getOutputStream());
 	}
 	
-	/**
-	 * Send and receive data from the client. The first line received will be
-	 * interpreted as the cleint's user-name.
-	 */
 	public void run() 
 	{
-		//TODO: Get the inputs sent by client and broadcast it to the rest of the
-		//clients. 		
-		String msg;
-		String user;
-		//TODO: The first input is the username of the client.
 		
+		_running = true;
 		_pool.add(this);
 		
-		try{
-				user = _input.readLine();
-				_pool.broadcast("User " + user + " logged in.", this);
-				
-				while(true)
-				{
-				msg = _input.readLine();
-				
-				_pool.broadcast(user + ": " + msg, this);
-				}
+		try
+		{
+			while(_running) //handle request, send response; if a request is bad, kill and return.
+			{
+				_input.readLine();
+			}
 		}
 		catch(IOException e)
 		{
 			System.out.println("Cannot read from clients.");
 		}
 	}
-		
-	
 
-	/**
-	 * Send a string to the client via the socket
-	 * 
-	 * @param message text to send
-	 */
-	public void send(String message) 
+	//The following methods generate response data
+	public List<Way> getWaysInRange()
 	{
-		//TODO: Set up the methods, so it will send the message to the client
-		_output.println(message);
-		_output.flush();
+		return null;
+	}
+	
+	public List<Street> findShortestPath()
+	{
+		return null;
+	}
+	
+	public List<String> getNames()
+	{
+		return null;
+	}
+	
+	public Node getIntersection()
+	{
+		return null;
 	}
 
 	/**
@@ -85,8 +91,10 @@ public class ClientHandler extends Thread {
 	 * 
 	 * @throws IOException Passed up from socket
 	 */
-	public void kill() throws IOException {
-		//TODO: Close all the streams after the client disconnects.
+	public void kill() throws IOException 
+	{
+		_running = false;
+		_pool.remove(this);
 		_input.close();
 		_output.close();
 		_client.close();

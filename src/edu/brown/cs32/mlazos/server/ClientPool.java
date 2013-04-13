@@ -37,28 +37,12 @@ public class ClientPool {
 		return _clients.remove(client);
 	}
 	
-	/**
-	 * Send a message to clients in the pool, but the sender.
-	 * 
-	 * @param message to send
-	 * @param sender the client _not_ to send the message to (send to everyone
-	 *          if null)
-	 */
-	public synchronized void broadcast(String message, ClientHandler sender) {
-		for (ClientHandler client : _clients) {
-			if (sender != null && sender == client) {
-				continue;
-			}
 
-			client.send(message);
-		}
-	}
-	
 	/**
 	 * Close all {@link ClientHandler}s and empty the pool
 	 */
-	public synchronized void killall() {
-		this.broadcast("The server is quitting now. Goodbye.", null);
+	public synchronized void killall() 
+	{
 
 		for (ClientHandler client : _clients) {
 			try {

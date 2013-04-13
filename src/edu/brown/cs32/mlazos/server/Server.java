@@ -4,10 +4,7 @@ import java.net.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
-/**
- * A chat server, listening for incoming connections and passing them
- * off to {@link ClientHandler}s.
- */
+
 public class Server extends Thread 
 {
 
@@ -50,9 +47,6 @@ public class Server extends Thread
 	public void run() 
 	{
 		_running = true;
-		//TODO: Set up a while loop to receive all the socket connection
-		//requests made by a client
-	
 		_bot = new RecieveTrafficData();
 		_bot.start();
 		
@@ -70,9 +64,6 @@ public class Server extends Thread
 			}
 			
 		}
-		//Helpful code:
-		//	System.out.println("Connected to a client.");
-		//	new ClientHandler(_clients, clientConnection).start();
 	}
 	
 	/**
@@ -81,9 +72,11 @@ public class Server extends Thread
 	 * 
 	 * @throws IOException if any socket is invalid.
 	 */
-	public void kill() throws IOException {
+	public void kill() throws IOException 
+	{
 		_running = false;
 		_clients.killall();
+		_botSocket.close();
 		_socket.close();
 	}
 	
@@ -130,17 +123,6 @@ public class Server extends Thread
          "[+-]?(" + // Optional sign character
          "NaN|" +           // "NaN" string
          "Infinity|" +      // "Infinity" string
-
-         // A decimal floating-point string representing a finite positive
-         // number without a leading sign has at most five basic pieces:
-         // Digits . Digits ExponentPart FloatTypeSuffix
-         // 
-         // Since this method allows integer-only strings as input
-         // in addition to strings of floating-point literals, the
-         // two sub-patterns below are simplifications of the grammar
-         // productions from the Java Language Specification, 2nd 
-         // edition, section 3.10.2.
-
          // Digits ._opt Digits_opt ExponentPart_opt FloatTypeSuffix_opt
          "((("+Digits+"(\\.)?("+Digits+"?)("+Exp+")?)|"+
 
