@@ -1,0 +1,2 @@
+#!/bin/sh
+/course/cs032//data/traffic/cs032_traffic_bot $1 /course/cs032/data/maps/index.tsv
