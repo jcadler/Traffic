@@ -1,0 +1,5 @@
+<source lang="xml">
+  <?xml version="1.0" encoding="UTF-8"?>
+  <TestElement hello="hello">
+  </TestElement>
+</source>
