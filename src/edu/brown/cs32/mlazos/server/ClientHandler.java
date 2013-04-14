@@ -49,6 +49,7 @@ public class ClientHandler extends Thread
 	 */
 	public ClientHandler(ClientPool pool, Socket client, Retriever ret,SAXParser parse) throws IOException 
 	{
+            super("ClientHandler");
 		if (pool == null || client == null) 
 		{
 			throw new IllegalArgumentException("Cannot accept null arguments.");
@@ -65,39 +66,50 @@ public class ClientHandler extends Thread
 	
 	public void run() 
 	{
-		
+		System.out.println("running");
 		_running = true;
 		_pool.add(this);
 		
 		try
 		{
-                    p.parse(_client.getInputStream(),new ServerXMLHandler());
-                    while(_running) //handle request, send response; if a request is bad, kill and return.
+                    XMLParseThread parser = new XMLParseThread(p,new ServerXMLHandler(),_client.getInputStream(),waiter);
+                    parser.start();
+                    System.out.println("started parsing");
+                    synchronized(waiter)
                     {
-                            if(request!=null)
+                        waiter.wait();
+                    }
+                    System.out.println("parsing");
+                    while(_running && parser.running()) //handle request, send response; if a request is bad, kill and return.
+                    {
+                        if(request!=null)
+                        {
+                            switch(request)
                             {
-                                switch(request)
-                                {
-                                    case "getWaysInRange":
-                                        getWays();
-                                        break;
-                                    case "dijkstra":
-                                        findShortestPath();
-                                        break;
-                                    case "getNames":
-                                        getNames();
-                                        break;
-                                    case "getIntersection":
-                                        getIntersection();
-                                        break;
-                                }
+                                case "getWaysInRange":
+                                    getWays();
+                                    break;
+                                case "dijkstra":
+                                    findShortestPath();
+                                    break;
+                                case "getNames":
+                                    getNames();
+                                    break;
+                                case "getIntersection":
+                                    getIntersection();
+                                    break;
                             }
                         }
                         request=null;
-                        waiter.wait();
+                        synchronized(waiter)
+                        {
+                            waiter.wait();
+                        }
+                    }
                 }
 		catch(InterruptedException e)
 		{
+                    System.out.print("problem in the client handler");
 			System.out.println(e.getMessage());
 		}
                 catch(IllegalArgumentException e)
@@ -107,14 +119,22 @@ public class ClientHandler extends Thread
                 }
                 catch(Exception e)
                 {
+                    System.out.print("problem in the client handler ");
                     System.out.println(e.getMessage());
+                    e.printStackTrace();
                 }
+                System.out.println("leaving");
 	}
 
 	//The following methods generate and print response data
 	
         private void getWays() throws IllegalArgumentException
         {
+            System.out.println("getting ways");
+            System.out.println("minLat: "+minLat);
+            System.out.println("minLong: "+minLong);
+            System.out.println("maxLat: "+maxLat);
+            System.out.println("maxLong: "+maxLong);
             String sendBack="<response>\n";
             try
             {
@@ -132,6 +152,7 @@ public class ClientHandler extends Thread
             }
             catch(IOException e)
             {
+                System.out.print("problem in getWays");
                 System.out.println(e.getMessage());
             }
             sendBack+="</response>";
@@ -206,6 +227,7 @@ public class ClientHandler extends Thread
             }
             catch(IOException e)
             {
+                System.out.print("problem in getIntersection");
                 System.out.println(e.getMessage());
             }
             sendBack+="</response>\n";
@@ -286,6 +308,7 @@ public class ClientHandler extends Thread
             @Override
             public void endElement(String uri, String localName, String name)
             {
+                System.out.println("end of request");
                 if(name.equals("request"))
                 {
                     synchronized(waiter)
@@ -306,6 +329,7 @@ public class ClientHandler extends Thread
                 }
                 catch(Exception e)
                 {
+                    System.out.print("problem in waysHandle");
                     System.out.println(e.getMessage());
                     throw new IllegalArgumentException("wrong arguments in getWays");
                 }
@@ -355,6 +379,7 @@ public class ClientHandler extends Thread
                 }
                 catch(Exception e)
                 {
+                    System.out.print("problem in intersectionHandle");
                     System.out.println(e.getMessage());
                 }
                 if(name.equals("request"))
