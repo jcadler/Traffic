@@ -1,10 +1,11 @@
 package edu.brown.cs32.mlazos.server;
 import java.io.*;
 import java.net.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
 import java.util.regex.Pattern;
 import edu.brown.cs32.jcadler.retrieval.Retriever;
 import javax.xml.parsers.SAXParserFactory;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 public class Server extends Thread 
@@ -17,7 +18,7 @@ public class Server extends Thread
 	private RecieveTrafficData _bot;
 	private BufferedReader _trafficInput;
 	private boolean _running;
-	private	ConcurrentHashMap<String, Double> _trafficData;
+	private	Map<String, Double> _trafficData;
 	private boolean _botConnectionSuccess;
         private Retriever r;
 
@@ -28,7 +29,7 @@ public class Server extends Thread
 	 * @param port
 	 * @throws IOException
 	 */
-	public Server(int port, int botPort, ConcurrentHashMap<String, Double> trafficDataMap, Retriever ret) throws IOException 
+	public Server(int port, int botPort, Retriever ret) throws IOException 
 	{
 		if (port <= 1024 || botPort <= 1024) 
 		{
@@ -43,7 +44,7 @@ public class Server extends Thread
 			_botSocket = new Socket("localhost", botPort);
 			_botConnectionSuccess = true;
 			_trafficInput = new BufferedReader(new InputStreamReader(_botSocket.getInputStream()));
-			_trafficData = trafficDataMap;
+			_trafficData = new ConcurrentHashMap<>();
 		}
 		catch(ConnectException e)
 		{
