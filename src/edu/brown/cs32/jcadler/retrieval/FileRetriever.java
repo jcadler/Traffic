@@ -220,6 +220,18 @@ public class FileRetriever implements Retriever
         return ret;
     }
     
+    public List<Way> getWaysInRange(double minLat, double maxLat,
+                                    double minLong, double maxLong, Boolean exit) throws IOException
+    {
+        List<String> wIDs = new ArrayList<>();
+        List<Way> ret = new ArrayList<>();
+        for(Node n : getNodesInRange(minLat,maxLat,minLong,maxLong,exit))
+            wIDs.addAll(n.getWayIDs());
+        for(String s : wIDs)
+            ret.add(getWay(s,false,exit));
+        return ret;
+    }
+    
     private int getMaxScale(BigDecimal... deci)
     {
         Integer ret=null;
@@ -243,11 +255,12 @@ public class FileRetriever implements Retriever
      * @return
      * @throws IOException 
      */
-    public List<String> getIntersection(String street1, String street2) throws IOException
+    public List<Node> getIntersection(String street1, String street2) throws IOException
     {
         List<String> ns1 = index.getNamePage(street1);
         List<String> ns2 = index.getNamePage(street2);
         List<String> ret = new ArrayList<>();
+        List<Node> retNodes = new ArrayList<>();
         ns1 = getNodeIDs(ns1);
         ns2 = getNodeIDs(ns2);
         for(String s : ns1)
@@ -255,7 +268,11 @@ public class FileRetriever implements Retriever
             if(ns2.contains(s))
                 ret.add(s);
         }
-        return ret;
+        for(String s : ret)
+        {
+            retNodes.add(getNode(s,false));
+        }
+        return retNodes;
     }
     
     private List<String> getNodeIDs(List<String> l)

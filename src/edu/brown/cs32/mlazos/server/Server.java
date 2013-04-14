@@ -3,6 +3,8 @@ import java.io.*;
 import java.net.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
+import edu.brown.cs32.jcadler.retrieval.Retriever;
+import javax.xml.parsers.SAXParserFactory;
 
 
 public class Server extends Thread 
@@ -17,6 +19,7 @@ public class Server extends Thread
 	private boolean _running;
 	private	ConcurrentHashMap<String, Double> _trafficData;
 	private boolean _botConnectionSuccess;
+        private Retriever r;
 
 	/**
 	 * Initialize a server on the given port. This server will not listen until
@@ -25,13 +28,12 @@ public class Server extends Thread
 	 * @param port
 	 * @throws IOException
 	 */
-	public Server(int port, int botPort, ConcurrentHashMap<String, Double> trafficDataMap) throws IOException 
+	public Server(int port, int botPort, ConcurrentHashMap<String, Double> trafficDataMap, Retriever ret) throws IOException 
 	{
 		if (port <= 1024 || botPort <= 1024) 
 		{
 			throw new IllegalArgumentException("Ports under 1024 are reserved!");
 		}
-		
 		
 		_port = port;
 		_clients = new ClientPool();
@@ -47,9 +49,7 @@ public class Server extends Thread
 		{
 			_botConnectionSuccess = false;
 		}
-		
-		
-		
+                r=ret;
 	}
 
 	/**
@@ -57,6 +57,7 @@ public class Server extends Thread
 	 */
 	public void run() 
 	{
+                SAXParserFactory f = SAXParserFactory.newInstance();
 		_running = true;
 		if(_botConnectionSuccess)
 		{
@@ -70,13 +71,19 @@ public class Server extends Thread
 			{
 				Socket clientConnection = _socket.accept();
 				System.out.println("Connected to client.");
-				new ClientHandler(_clients, clientConnection).start();
+				new ClientHandler(_clients, clientConnection,r,f.newSAXParser()).start();
 			}
 			catch(IOException e)
 			{
 				System.out.println("Server cannot accept connections.");
+                                System.out.println(e.getMessage());
+                                _running=false;
 			}
-			
+                        catch(Exception e)
+                        {
+                            System.out.println(e.getMessage());
+                            _running=false;
+                        }
 		}
 	}
 	

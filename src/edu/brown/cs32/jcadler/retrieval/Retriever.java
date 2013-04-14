@@ -16,5 +16,7 @@ public interface Retriever
     public List<Node> getNodesInRange(double minLong, double maxLong,
                                       double minLat, double maxLat, Boolean exit) throws IOException;
     public List<String> getNames();
-    public List<String> getIntersection(String street1, String street2) throws IOException;
+    public List<Node> getIntersection(String street1, String street2) throws IOException;
+    public List<Way> getWaysInRange(double minLong, double maxLong,
+                                    double minLat, double maxLat, Boolean exit) throws IOException;
 }
