@@ -16,6 +16,7 @@ public class Server extends Thread
 	private BufferedReader _trafficInput;
 	private boolean _running;
 	private	ConcurrentHashMap<String, Double> _trafficData;
+	private boolean _botConnectionSuccess;
 
 	/**
 	 * Initialize a server on the given port. This server will not listen until
@@ -35,9 +36,19 @@ public class Server extends Thread
 		_port = port;
 		_clients = new ClientPool();
 		_socket = new ServerSocket(port);
-		_botSocket = new Socket("localhost", botPort);
-		_trafficInput = new BufferedReader(new InputStreamReader(_botSocket.getInputStream()));
-		_trafficData = trafficDataMap;
+		try
+		{
+			_botSocket = new Socket("localhost", botPort);
+			_botConnectionSuccess = true;
+			_trafficInput = new BufferedReader(new InputStreamReader(_botSocket.getInputStream()));
+			_trafficData = trafficDataMap;
+		}
+		catch(ConnectException e)
+		{
+			_botConnectionSuccess = false;
+		}
+		
+		
 		
 	}
 
@@ -47,8 +58,11 @@ public class Server extends Thread
 	public void run() 
 	{
 		_running = true;
-		_bot = new RecieveTrafficData();
-		_bot.start();
+		if(_botConnectionSuccess)
+		{
+			_bot = new RecieveTrafficData();
+			_bot.start();
+		}
 		
 		while(_running)
 		{
@@ -99,7 +113,6 @@ public class Server extends Thread
 						
 						if(traffic >= 1)
 						{
-							System.out.println(data[0] + "\t" + data[1]);
 							_trafficData.put(data[0], traffic);
 						}
 					}
