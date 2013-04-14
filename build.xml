@@ -29,8 +29,7 @@
   <target name="jar" depends="compile">
     <jar destfile="${derived.jar}" basedir="${derived.classes}" includes="**/*.class">
       <manifest>
-	<attribute name="Class-Path" value="../lib/guava-14.0.1.jar" />
-	<attribute name="Main-Class" value="edu.brown.cs32.jcadler.maps.Main" />
+	<attribute name="Main-Class" value="edu.brown.cs32.jcadler.SAX.Main" />
       </manifest>
     </jar>
   </target>
