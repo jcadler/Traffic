@@ -56,7 +56,7 @@ public class Server extends Thread
 	/**
 	 * Wait for and handle connections indefinitely.
 	 */
-	public void run() 
+	public void run()
 	{
                 SAXParserFactory f = SAXParserFactory.newInstance();
 		_running = true;
@@ -70,6 +70,7 @@ public class Server extends Thread
 		{
 			try
 			{
+                            System.out.println("waiting for a connection");
 				Socket clientConnection = _socket.accept();
 				System.out.println("Connected to client.");
 				new ClientHandler(_clients, clientConnection,r,f.newSAXParser()).start();

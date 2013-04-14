@@ -185,6 +185,7 @@ public class ClientHandler extends Thread
 	
 	private void getNames()
 	{
+            System.out.println("getting names");
             String sendBack = "<response>\n";
             List<String> names = r.getNames();
             for(String s : names)
@@ -260,6 +261,7 @@ public class ClientHandler extends Thread
             public void startElement(String uri, String localName, 
                                      String name, Attributes a) throws IllegalArgumentException
             {
+                System.out.println("name: "+name);
                 if(request==null && name.equals("request"))
                     request = a.getValue("type");
                 if(request!=null)
