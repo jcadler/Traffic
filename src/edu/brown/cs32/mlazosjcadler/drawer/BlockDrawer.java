@@ -59,6 +59,32 @@ public class BlockDrawer implements Drawer
 	}
 
 
+	//this function generates a loading screen
+	public Screen printLoadingScreen(List<Street> streets, Double screenUpperLeftX, Double screenUpperLeftY, Double screenLowerRightX, Double screenLowerRightY)
+	{
+		mapGraphics.clearRect(0, 0, map.getWidth(), map.getHeight());
+		mapGraphics.drawString("Loading", map.getWidth()/2, map.getHeight()/2);
+		nodesOnScreen = new HashSet<Ndimensional>(6000);
+
+		drawStreetsWithoutCache(streets, Color.BLACK, screenUpperLeftX, screenUpperLeftY, screenLowerRightX, screenLowerRightY);
+
+		return new Screen(nodesOnScreen, map);//deepCopy(map));
+	}
+	
+	//this function generates a loading screen
+	public Screen printLoadingScreen(List<Street> streets, List<Street> path, Double screenUpperLeftX, Double screenUpperLeftY, Double screenLowerRightX, Double screenLowerRightY)
+	{
+		mapGraphics.clearRect(0, 0, map.getWidth(), map.getHeight());
+		mapGraphics.drawString("Loading", map.getWidth()/2, map.getHeight()/2);
+		nodesOnScreen = new HashSet<Ndimensional>(6000);
+
+		drawStreetsWithoutCache(streets, Color.BLACK, screenUpperLeftX, screenUpperLeftY, screenLowerRightX, screenLowerRightY);
+		drawStreetsWithoutCache(path, new Color((int)(50*.935),(int)(205*.935),(int)(50*.935)), screenUpperLeftX, screenUpperLeftY, screenLowerRightX, screenLowerRightY);
+
+		return new Screen(nodesOnScreen, map);//deepCopy(map));
+	}
+	
+	
 	//This function generates a map graphic from a list of Ways.
 	public Screen generateMap(List<Street> streets, Double screenUpperLeftX, Double screenUpperLeftY, Double screenLowerRightX, Double screenLowerRightY)
 	{
