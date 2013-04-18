@@ -178,8 +178,11 @@ public class FileRetriever implements Retriever
         {
             if(checkExit(exit))
                 return null;
-            if(minLatID<i && maxLatID>i)
+            if(minLatID<=i && maxLatID>=i)
+            {
                 already.add(i);
+                System.out.println("already have "+i);
+            }
         }
         for(int i=minLatID;i<=maxLatID;i++)
         {

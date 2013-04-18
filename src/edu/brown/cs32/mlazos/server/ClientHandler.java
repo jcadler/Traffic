@@ -12,6 +12,7 @@ import edu.brown.cs32.jcadler.nodeWay.Node;
 import edu.brown.cs32.jcadler.nodeWay.Way;
 import edu.brown.cs32.jcadler.retrieval.Retriever;
 import edu.brown.cs32.jcadler.dijkstra.Dijkstra;
+import edu.brown.cs32.jcadler.dijkstra.FileDijkstra;
 import edu.brown.cs32.jcadler.search.NodeWay;
 
 /**
@@ -59,9 +60,11 @@ public class ClientHandler extends Thread
 		_client = client;
                 _output = new PrintStream(_client.getOutputStream(),false,"UTF-8");
                 r = ret;
-                d = new Dijkstra(r);
+                d = new FileDijkstra(r);
                 request = null;
                 p = parse;
+                _output.println("<init>");
+                _output.flush();
 	}
 	
 	public void run() 
@@ -74,12 +77,10 @@ public class ClientHandler extends Thread
 		{
                     XMLParseThread parser = new XMLParseThread(p,new ServerXMLHandler(),_client.getInputStream(),waiter);
                     parser.start();
-                    System.out.println("started parsing");
                     synchronized(waiter)
                     {
                         waiter.wait();
                     }
-                    System.out.println("parsing");
                     while(_running && parser.running()) //handle request, send response; if a request is bad, kill and return.
                     {
                         if(request!=null)
@@ -98,9 +99,14 @@ public class ClientHandler extends Thread
                                 case "getIntersection":
                                     getIntersection();
                                     break;
+                                default:
+                                    _running=false;
+                                    break;
                             }
                         }
                         request=null;
+                        if(!_running)
+                            break;
                         synchronized(waiter)
                         {
                             waiter.wait();
@@ -123,22 +129,33 @@ public class ClientHandler extends Thread
                     System.out.println(e.getMessage());
                     e.printStackTrace();
                 }
-                System.out.println("leaving");
+                finally
+                {
+                    System.out.println("leaving");
+                    try
+                    {
+                        _client.close();
+                    }
+                    catch(IOException e)
+                    {
+                        System.out.println("problem closing");
+                        e.printStackTrace();
+                        return;
+                    }
+                }
 	}
 
 	//The following methods generate and print response data
 	
         private void getWays() throws IllegalArgumentException
         {
-            System.out.println("getting ways");
-            System.out.println("minLat: "+minLat);
-            System.out.println("minLong: "+minLong);
-            System.out.println("maxLat: "+maxLat);
-            System.out.println("maxLong: "+maxLong);
             String sendBack="<response>\n";
+            long time;
             try
             {
+                time = System.currentTimeMillis();
                 List<Way> ways = r.getWaysInRange(minLong, maxLong, minLat, maxLat, false);
+                System.out.println("getting took "+(System.currentTimeMillis()-time));
                 List<Node> nodes = new ArrayList<>();
                 for(Way w : ways)
                 {
@@ -156,8 +173,11 @@ public class ClientHandler extends Thread
                 System.out.println(e.getMessage());
             }
             sendBack+="</response>";
+            System.out.println("sending ways");
+            time = System.currentTimeMillis();
             _output.println(sendBack);
             _output.flush();
+            System.out.println("sending took "+(System.currentTimeMillis()-time));
             minLat=null;
             minLong=null;
             maxLat=null;
@@ -168,7 +188,7 @@ public class ClientHandler extends Thread
 	{
             if(start==null || end==null)
                 throw new IllegalArgumentException("need both end and start in dijkstra");
-            List<NodeWay> result;
+            List<Way> result;
             try
             {
                 result = d.getMinDistance(start,end);
@@ -182,19 +202,15 @@ public class ClientHandler extends Thread
                 sendBack+="<noPath/>\n";
             else
             {
-                List<Way> ways = new ArrayList<>();
                 List<Node> nodes = new ArrayList<>();
-                for(NodeWay nw : result)
+                for(Way w : result)
                 {
-                    if(nw.getWay()==null)
-                        continue;
-                    ways.add(nw.getWay());
-                    nodes.add(nw.getWay().getStart());
-                    nodes.add(nw.getWay().getEnd());
+                    nodes.add(w.getStart());
+                    nodes.add(w.getEnd());
                 }
                 for(Node n : nodes)
                     sendBack+=nodeToXMLString(n)+"\n";
-                for(Way w : ways)
+                for(Way w : result)
                     sendBack+=wayToXMLString(w)+"\n";
             }
             sendBack+="</response>";
@@ -202,18 +218,20 @@ public class ClientHandler extends Thread
             _output.flush();
             start = null;
             end = null;
+            System.out.println("got path");
 	}
 	
 	private void getNames()
 	{
             System.out.println("getting names");
-            String sendBack = "<response>\n";
+            String sendBack = "<response names=\"";
             List<String> names = r.getNames();
             for(String s : names)
-                sendBack+=s+"\n";
-            sendBack+="</response>";
+                sendBack+=s.replaceAll("[^A-Za-z_\\s]","")+",";
+            sendBack+="\"/>";
             _output.println(sendBack);
             _output.flush();
+            System.out.println("got names");
 	}
 	
 	private void getIntersection()
@@ -283,7 +301,6 @@ public class ClientHandler extends Thread
             public void startElement(String uri, String localName, 
                                      String name, Attributes a) throws IllegalArgumentException
             {
-                System.out.println("name: "+name);
                 if(request==null && name.equals("request"))
                     request = a.getValue("type");
                 if(request!=null)
@@ -308,7 +325,6 @@ public class ClientHandler extends Thread
             @Override
             public void endElement(String uri, String localName, String name)
             {
-                System.out.println("end of request");
                 if(name.equals("request"))
                 {
                     synchronized(waiter)
