@@ -102,4 +102,12 @@ public class Node implements Ndimensional
     {
         return 2;
     }
+    
+    public String getXMLString()
+    {
+        String ids = "";
+        for(String s : wIDs)
+            ids+=s+",";
+        return "<node id=\""+id+"\" lat=\""+lat+"\" long=\""+lng+"\" wIDs=\""+ids+"\" />";
+    }
 }

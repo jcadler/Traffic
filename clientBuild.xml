@@ -6,7 +6,7 @@
 
   <property name="app.derived" location="derived"/>
   <property name="derived.classes" location="${app.derived}/classes"/>
-  <property name="derived.jar" location="${app.derived}/${project}.jar"/>
+  <property name="derived.jar" location="${app.derived}/trafficClient.jar"/>
   <property name="derived.javadoc" location="${app.derived}/javadoc"/>
   <property name="derived.student" location="${app.derived}/student/${project}"/>
 
@@ -29,7 +29,8 @@
   <target name="jar" depends="compile">
     <jar destfile="${derived.jar}" basedir="${derived.classes}" includes="**/*.class">
       <manifest>
-	<attribute name="Main-Class" value="edu.brown.cs32.mlazos.server.ServerMain" />
+	<attribute name="Main-Class" value="edu.brown.cs32.jcadler.maps.ClientMain" />
+	<attribute name="Class-Path" value="../lib/guava-14.0.1.jar"/>
       </manifest>
     </jar>
   </target>
