@@ -1,7 +1,0 @@
-#!/bin/bash
-files=./testing/*
-for f in $files
-do
-	cat $f |  nc 10.116.72.134 9850
-	sleep 5 
-done

@@ -1,0 +1,4 @@
+#!/bin/bash
+cat ./testing/$1 | nc localhost 9850 &
+sleep 120
+killall nc

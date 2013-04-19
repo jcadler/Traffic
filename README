@@ -1,0 +1,7 @@
+HANDLING BOT DATA
+Our server handles bot data by running a recieve thread that just listens to incoming data. If the data is parsable and the traffic value is greater than 1.0 the street name and traffic value are recorded in a synchronized hashmap.  This allows dijkstra queries to have access to the data in real-time as it's updated and it also allows for easy replacement if a street's traffic value is updated.
+COLOR SCHEME
+Our drawer was modified so that roads with larger traffic coefficients appeared redder on the map. We used a scale so that traffic values in the range of 1.0-5.0 would be mapped to the range 0-255 of redness (essentially the program subtracts GB components until there is only red left) If a road was colored green because it is part of path, the drawer makes roads with more traffic appear a darker green.  
+
+TESTING
+We implemented a few test files (located in the /testing) and a bash script to run them. To run the tests first start up a server by calling the run script.  Once the server is waiting for clients, type "tester <filename>" where <filename> is the name of one of the files in the /testing directory.  We made some random messy input data that server should ignore, and had two legitimate command files that the server should respond to.  Once the script sends the command over the network it waits two minutes and then terminates.
