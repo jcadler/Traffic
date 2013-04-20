@@ -9,7 +9,7 @@ import java.io.IOException;
  *
  * @author john
  */
-public interface Dijkstra 
+public interface Dijkstra
 {
     public List<Way> getMinDistance(Node start, Node end) throws IOException;
 }

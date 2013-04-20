@@ -110,4 +110,15 @@ public class Node implements Ndimensional
             ids+=s+",";
         return "<node id=\""+id+"\" lat=\""+lat+"\" long=\""+lng+"\" wIDs=\""+ids+"\" />";
     }
+    
+    public String getXMLString(boolean start)
+    {
+        String ids = "";
+        String type = "end";
+        for(String s : wIDs)
+            ids+=s+",";
+        if(start)
+            type="start";
+        return "<node id=\""+id+"\" lat=\""+lat+"\" long=\""+lng+"\" wIDs=\""+ids+"\""+" type=\""+type+"\" />";
+    }
 }

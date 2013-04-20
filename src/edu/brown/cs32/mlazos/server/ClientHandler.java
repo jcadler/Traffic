@@ -7,13 +7,13 @@ import javax.xml.parsers.SAXParser;
 import org.xml.sax.helpers.DefaultHandler;
 import org.xml.sax.Attributes;
 import java.util.Arrays;
+import java.util.Map;
 
 import edu.brown.cs32.jcadler.nodeWay.Node;
 import edu.brown.cs32.jcadler.nodeWay.Way;
 import edu.brown.cs32.jcadler.retrieval.Retriever;
 import edu.brown.cs32.jcadler.dijkstra.Dijkstra;
 import edu.brown.cs32.jcadler.dijkstra.FileDijkstra;
-import edu.brown.cs32.jcadler.search.NodeWay;
 
 /**
  * Encapsulate IO for the given client {@link Socket}, with a group of
@@ -22,6 +22,7 @@ import edu.brown.cs32.jcadler.search.NodeWay;
 public class ClientHandler extends Thread 
 {
 	private ClientPool _pool;
+        private Map<String,Double> traffic;
 	private Boolean _running;
 	private Socket _client;
 	private BufferedReader _input;
@@ -38,6 +39,7 @@ public class ClientHandler extends Thread
         private Retriever r;
         private Dijkstra d;
         private SAXParser p;
+        private XMLParseThread thread;
         private final String waiter = "wait";
 	
 	/**
@@ -48,7 +50,8 @@ public class ClientHandler extends Thread
 	 * @throws IOException if the client socket is invalid
 	 * @throws IllegalArgumentException if pool or client is null
 	 */
-	public ClientHandler(ClientPool pool, Socket client, Retriever ret,SAXParser parse) throws IOException 
+	public ClientHandler(ClientPool pool, Socket client, 
+                             Retriever ret,SAXParser parse, Map<String,Double> t) throws IOException 
 	{
             super("ClientHandler");
 		if (pool == null || client == null) 
@@ -58,6 +61,7 @@ public class ClientHandler extends Thread
 		
 		_pool = pool;
 		_client = client;
+                traffic=t;
                 _output = new PrintStream(_client.getOutputStream(),false,"UTF-8");
                 r = ret;
                 d = new FileDijkstra(r);
@@ -69,23 +73,22 @@ public class ClientHandler extends Thread
 	
 	public void run() 
 	{
-		System.out.println("running");
+		System.out.println("running"); //indicates that the server has started running
 		_running = true;
 		_pool.add(this);
-		
 		try
 		{
-                    XMLParseThread parser = new XMLParseThread(p,new ServerXMLHandler(),_client.getInputStream(),waiter);
-                    parser.start();
+                    thread = new XMLParseThread(p,new ServerXMLHandler(),_client.getInputStream(),waiter);
+                    thread.start();
                     synchronized(waiter)
                     {
-                        waiter.wait();
+                        waiter.wait();//waits for the parser/handler to finish its work
                     }
-                    while(_running && parser.running()) //handle request, send response; if a request is bad, kill and return.
+                    while(_running && thread.running()) //handle request, send response; if a request is bad, kill and return.
                     {
                         if(request!=null)
                         {
-                            switch(request)
+                            switch(request)//looks at the type of request, and responds accordingly
                             {
                                 case "getWaysInRange":
                                     getWays();
@@ -129,7 +132,7 @@ public class ClientHandler extends Thread
                     System.out.println(e.getMessage());
                     e.printStackTrace();
                 }
-                finally
+                finally //if something happens, terminate the client connection and return
                 {
                     System.out.println("leaving");
                     try
@@ -147,15 +150,16 @@ public class ClientHandler extends Thread
 
 	//The following methods generate and print response data
 	
+        /**
+         * sends the ways that were requested by the client
+         * @throws IllegalArgumentException 
+         */
         private void getWays() throws IllegalArgumentException
         {
-            String sendBack="<response>\n";
-            long time;
+            String sendBack="<response>\n";//the response to send back
             try
             {
-                time = System.currentTimeMillis();
                 List<Way> ways = r.getWaysInRange(minLong, maxLong, minLat, maxLat, false);
-                System.out.println("getting took "+(System.currentTimeMillis()-time));
                 List<Node> nodes = new ArrayList<>();
                 for(Way w : ways)
                 {
@@ -172,12 +176,11 @@ public class ClientHandler extends Thread
                 System.out.print("problem in getWays");
                 System.out.println(e.getMessage());
             }
+            if(!thread.running())
+                throw new IllegalArgumentException("the parser has stopped running");//exit if the parser has stopped
             sendBack+="</response>";
-            System.out.println("sending ways");
-            time = System.currentTimeMillis();
             _output.println(sendBack);
             _output.flush();
-            System.out.println("sending took "+(System.currentTimeMillis()-time));
             minLat=null;
             minLong=null;
             maxLat=null;
@@ -218,12 +221,10 @@ public class ClientHandler extends Thread
             _output.flush();
             start = null;
             end = null;
-            System.out.println("got path");
 	}
 	
 	private void getNames()
 	{
-            System.out.println("getting names");
             String sendBack = "<response names=\"";
             List<String> names = r.getNames();
             for(String s : names)
@@ -231,7 +232,6 @@ public class ClientHandler extends Thread
             sendBack+="\"/>";
             _output.println(sendBack);
             _output.flush();
-            System.out.println("got names");
 	}
 	
 	private void getIntersection()
@@ -257,9 +257,11 @@ public class ClientHandler extends Thread
         
         private String wayToXMLString(Way w)
         {
+            w.setTraffic(traffic.get(w.getID()));
             return "<way id=\""+w.getID()+"\" name=\""+w.getName()+
                     "\" startID=\""+w.getStart().getID()+
-                    "\" endID=\""+w.getEnd().getID()+"\"/>";
+                    "\" endID=\""+w.getEnd().getID()+
+                    "\" traffic=\""+w.getTraffic()+"\"/>";
         }
         
         private String nodeToXMLString(Node n)
@@ -293,10 +295,21 @@ public class ClientHandler extends Thread
 		_client.close();
 	}
         
+        /**
+         * the handler which is used for the SAX parser
+         */
         private class ServerXMLHandler extends DefaultHandler
         {
             private final String waitOnMe = "waiting";
             
+            /**
+             * looks at the type of request and calls the corresponding handling function
+             * @param uri
+             * @param localName
+             * @param name
+             * @param a
+             * @throws IllegalArgumentException 
+             */
             @Override
             public void startElement(String uri, String localName, 
                                      String name, Attributes a) throws IllegalArgumentException
@@ -321,7 +334,12 @@ public class ClientHandler extends Thread
                     }
                 }
             }
-            
+            /**
+             * only acts if the end element is that of the request
+             * @param uri
+             * @param localName
+             * @param name 
+             */
             @Override
             public void endElement(String uri, String localName, String name)
             {
@@ -353,6 +371,8 @@ public class ClientHandler extends Thread
             
             private void dijkstraHandle(String name, Attributes a) throws IllegalArgumentException
             {
+                if(name.equals("request"))
+                    return;
                 if(name.equals("node"))
                 {
                     if(a.getValue("type").equals("start"))

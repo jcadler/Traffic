@@ -16,21 +16,24 @@ public class Way implements Street
     private String id;
     private Node start;
     private Node end;
+    private Double traffic;
     
-    public Way(String i,String n, String startID, String endID, Retriever r)
+    public Way(String i,String n, String startID, String endID, Retriever r, Double t)
     {
         id=i;
         name=n;
         start=new Node(startID,r);
         end=new Node(endID,r);
+        traffic=t;
     }
     
-    public Way(String i, String n, Node s, Node e)
+    public Way(String i, String n, Node s, Node e, Double t)
     {
         id=i;
         name=n;
         start=s;
         end=e;
+        traffic = t;
     }
     
     public String getName()
@@ -61,7 +64,7 @@ public class Way implements Street
     public double getWeight() throws IOException
     {
         return Math.sqrt(Math.pow(end.getLatitude()-start.getLatitude(),2)+
-                         Math.pow(end.getLongitude()-start.getLongitude(),2));
+                         Math.pow(end.getLongitude()-start.getLongitude(),2))*traffic;
     }
     
     public String getStreetName()
@@ -138,6 +141,11 @@ public class Way implements Street
     
     public Double getTraffic()
     {
-        return 1d;
+        return traffic;
+    }
+    
+    public void setTraffic(Double d)
+    {
+        traffic = d;
     }
 }

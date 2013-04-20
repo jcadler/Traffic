@@ -1,2 +1,2 @@
 #!/bin/bash
-java -jar ./derived/trafficServer.jar ./Files/ways.tsv ./Files/nodes.tsv ./Files/index.tsv localhost 7600 9850
+java -jar ./derived/trafficServer.jar ./Files/ways.tsv ./Files/nodes.tsv ./Files/index.tsv localhost 7000 9850

@@ -43,7 +43,6 @@ public class GUI
     {
     	
         Drawer d = new BlockDrawer(1500,1500);
-        System.out.println("drawer made");
         double minLong = -71.59;
         double maxLong = -71.53;
         double minLat = 41.79;
@@ -52,7 +51,6 @@ public class GUI
         List<Street> streets = new ArrayList<>();
         for(Way w : ways)
             streets.add(w);
-        System.out.println("got "+streets.size()+" streets");
         Screen screen = d.generateMap(streets, minLong,minLat,maxLong,maxLat);
         JFrame f = new JFrame();
         f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -236,6 +234,17 @@ public class GUI
         @Override
         public void mouseWheelMoved(MouseWheelEvent e)
         {
+            int moved = e.getUnitsToScroll();
+            if(moved>0)
+            {
+                for(int i=0;i<moved;i++)
+                    thread.zoomOut();
+            }
+            else if(moved<0)
+            {
+                for(int i=0;i>moved;i--)
+                    thread.zoomIn();
+            }
         }
         
         @Override

@@ -36,6 +36,7 @@ public class UpdaterThread extends Thread
     private boolean running;
     private boolean run;
     private boolean update;
+    private boolean zoom;
     private final String runSynch = "running";
     private final String synch = "synch";
     private final String redrawSynch = "redrawing";
@@ -58,6 +59,7 @@ public class UpdaterThread extends Thread
         run = true;
         update = false;
         this.start();
+        zoom=false;
     }
     
     public void run()
@@ -73,6 +75,8 @@ public class UpdaterThread extends Thread
             Point viewPos = viewport.getViewPosition();
             synchronized(synch)
             {
+                if(zoom)
+                    redraw=true;
                 if(viewPos.getX()+250>1000)
                 {
                     minLong=minLong.add(diffLong);
@@ -106,6 +110,7 @@ public class UpdaterThread extends Thread
             {
                 if(redraw)
                 {
+                    System.out.println("redrawing");
                     List<Way> ways;
                     try
                     {
@@ -124,8 +129,10 @@ public class UpdaterThread extends Thread
                                                      maxLong.doubleValue(), maxLat.doubleValue());
                     img.setIcon(new ImageIcon(screen.getImage()));
                     viewport.repaint();
+                    System.out.println("done drawing");
                 }
                 redraw=false;
+                zoom=false;
             }
             synchronized(runSynch)
             {
@@ -204,5 +211,31 @@ public class UpdaterThread extends Thread
             update = true;
             synch.notifyAll();
         }
+    }
+    
+    public void zoomOut()
+    {
+        minLong=minLong.add(BigDecimal.valueOf(0.01));
+        maxLong=maxLong.add(BigDecimal.valueOf(0.01));
+        minLat=minLat.add(BigDecimal.valueOf(0.01));
+        maxLat=maxLat.add(BigDecimal.valueOf(0.01));
+        diffLong = (maxLong.subtract(minLong)).divide(BigDecimal.valueOf(3));
+        diffLat = (maxLat.subtract(minLat)).divide(BigDecimal.valueOf(3));
+        zoom=true;
+        System.out.println("zooming out");
+        update();
+    }
+    
+    public void zoomIn()
+    {
+        minLong=minLong.add(BigDecimal.valueOf(0.01));
+        maxLong=maxLong.add(BigDecimal.valueOf(0.01));
+        minLat=minLat.add(BigDecimal.valueOf(0.01));
+        maxLat=maxLat.add(BigDecimal.valueOf(0.01));
+        diffLong = (maxLong.subtract(minLong)).divide(BigDecimal.valueOf(3));
+        diffLat = (maxLat.subtract(minLat)).divide(BigDecimal.valueOf(3));
+        zoom=true;
+        System.out.println("zooming in");
+        update();
     }
 }

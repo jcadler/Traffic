@@ -33,8 +33,9 @@ public class FileRetriever implements Retriever
     private Map<String,Node> nodeCache;
     private Map<Integer,List<String>> nodePageCache;
     private Map<Integer,List<String>> wayPageCache;
+    private Map<String,Double> traffic;
     
-    public FileRetriever(String iName, String wName, String nName) throws IOException
+    public FileRetriever(String iName, String wName, String nName, Map<String,Double> t) throws IOException
     {
         index=new UTFNameGather(iName);
         ways=new UTFPager(wName);
@@ -45,6 +46,7 @@ public class FileRetriever implements Retriever
         wayPageCache=new HashMap<>();
         wayCache = new HashMap<>();
         nodeCache = new HashMap<>();
+        traffic = t;
         List<String> wOrder = Arrays.asList(ways.getLine(0).split("\t"));
         List<String> nOrder = Arrays.asList(nodes.getLine(0).split("\t"));
         wayOrder.put("id",wOrder.indexOf("id"));
@@ -278,6 +280,28 @@ public class FileRetriever implements Retriever
         return retNodes;
     }
     
+    public List<String> getNamedStreetIDs(String name)
+    {
+        List<String> ret = new ArrayList<>();
+        try
+        {
+            List<String> mid = new ArrayList<>();
+            List<String> page = index.getNamePage(name);
+            for(String s : page)
+                mid.addAll(Arrays.asList(s.split("\t")[1].split(",")));
+            for(String s : mid)
+            {
+                Node n = getNode(s,false);
+                ret.addAll(n.getWayIDs());
+            }
+        }
+        catch(Exception e)
+        {
+            return ret;
+        }
+        return ret;
+    }
+    
     private List<String> getNodeIDs(List<String> l)
     {
         List<String> ret=null;
@@ -310,21 +334,32 @@ public class FileRetriever implements Retriever
     {
         String[] s = (str+"~").split("\t");
         s[s.length-1]=s[s.length-1].substring(0,s[s.length-1].length()-1);
+        double t = 1.0;
+        if(traffic.get(s[wayOrder.get("id")])!=null)
+            t = traffic.get(s[wayOrder.get("id")]);
         return new Way(s[wayOrder.get("id")],
                        s[wayOrder.get("name")],
                        s[wayOrder.get("start")],
                        s[wayOrder.get("end")],
-                       this);
+                       this,
+                       t);
     }
     
     private Way stringToWay(String str, Boolean exit) throws IOException
     {
         String[] s = (str+"~").split("\t");
         s[s.length-1]=s[s.length-1].substring(0,s[s.length-1].length()-1);
+        double t = 1.0;
+        if(traffic.get(s[wayOrder.get("id")])!=null)
+        {
+            t = traffic.get(s[wayOrder.get("id")]);
+            System.out.println("traffic value of "+t);
+        }
         return new Way(s[wayOrder.get("id")],
                        s[wayOrder.get("name")],
                        getNode(s[wayOrder.get("start")],exit),
-                       getNode(s[wayOrder.get("end")],exit));
+                       getNode(s[wayOrder.get("end")],exit),
+                       t);
     }
     
     private int getBlockID(String id)

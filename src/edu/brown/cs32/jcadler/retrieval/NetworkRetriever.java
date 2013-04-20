@@ -1,6 +1,7 @@
 package edu.brown.cs32.jcadler.retrieval;
 
-import edu.brown.cs32.jcadler.nodeWay.*;
+import edu.brown.cs32.jcadler.nodeWay.Node;
+import edu.brown.cs32.jcadler.nodeWay.Way;
 import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
@@ -17,10 +18,10 @@ import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- *
+ * retrieves way, node and name info from across a network
  * @author john
  */
-public class NetworkRetriever implements Retriever, Dijkstra
+public class NetworkRetriever implements Dijkstra, Retriever
 {
     private Socket sock;
     private PrintStream out;
@@ -32,6 +33,12 @@ public class NetworkRetriever implements Retriever, Dijkstra
     private XMLParseThread thread;
     private final String wait = "waiting";
     
+    /**
+     * creats a new NetworkRetriever
+     * @param port the port through which to connect
+     * @param server hostname of the server
+     * @throws IOException 
+     */
     public NetworkRetriever(int port, String server) throws IOException
     {
         sock = new Socket(server,port);
@@ -52,22 +59,65 @@ public class NetworkRetriever implements Retriever, Dijkstra
         }
     }
     
+    /**
+     * the client never needs to get a node from the server, and therefore this
+     * method is not implemented
+     * @param id
+     * @param exit
+     * @return
+     * @throws IOException
+     * @throws IllegalArgumentException 
+     */
     public Node getNode(String id, Boolean exit) throws IOException,IllegalArgumentException
     {
         return null;
     }
     
+    
+    /**
+     * the client never needs to request a specific node from the server, therefore
+     * leaving this method unimplemented
+     * @param id
+     * @param lazy
+     * @param exit
+     * @return 
+     */
     public Way getWay(String id, boolean lazy, Boolean exit)
     {
         return null;
     }
     
+    /**
+     * this method is abstracted by getWaysInRange and is therefore left
+     * unimplemented
+     * @param minLong
+     * @param maxLong
+     * @param minLat
+     * @param maxLat
+     * @param exit
+     * @return
+     * @throws IOException 
+     */
     public List<Node> getNodesInRange(double minLong, double maxLong,
                                       double minLat, double maxLat, Boolean exit) throws IOException
     {
         return null;
     }
     
+    /**
+     * this method is only invoked on the server, and is therefore not implemented
+     * @param name
+     * @return 
+     */
+    public List<String> getNamedStreetIDs(String name)
+    {
+        return null;
+    }
+    
+    /**
+     * 
+     * @return 
+     */
     public synchronized List<String> getNames()
     {
         p.setType("getNames");
@@ -151,9 +201,10 @@ public class NetworkRetriever implements Retriever, Dijkstra
         try
         {
             String send = "<request type=\"dijkstra\">\n";
-            send+=start.getXMLString()+"\n";
-            send+=end.getXMLString()+"\n";
+            send+=start.getXMLString(true)+"\n";
+            send+=end.getXMLString(false)+"\n";
             send+="</request>";
+            p.setType("dijkstra");
             out.println(send);
             out.flush();
             while(!done)
@@ -171,6 +222,9 @@ public class NetworkRetriever implements Retriever, Dijkstra
         return ways;
     }
     
+    /**
+     * handler for the SAX parser
+     */
     private class ClientXMLHandler extends DefaultHandler
     {
         private String type;
@@ -180,9 +234,9 @@ public class NetworkRetriever implements Retriever, Dijkstra
         public void startElement(String uri, String localName, String name, Attributes a)
         {
             done=false;
-            if(name.equals("init"))
+            if(name.equals("init"))// the root node should be ignored
                 return;
-            switch(type)
+            switch(type) //check the type of request/response and act accordingly
             {
                 case "getNames":
                     names(name,a);
@@ -323,7 +377,8 @@ public class NetworkRetriever implements Retriever, Dijkstra
                 throw new IllegalArgumentException("You need valid start and end nodes");
             Node start = nodes.get(a.getValue("startID"));
             Node end = nodes.get(a.getValue("endID"));
-            return new Way(id,name,start,end);
+            Double d = Double.parseDouble(a.getValue("traffic"));
+            return new Way(id,name,start,end,d);
         }
         
     }

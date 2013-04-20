@@ -6,6 +6,7 @@ import java.util.regex.Pattern;
 import edu.brown.cs32.jcadler.retrieval.Retriever;
 import javax.xml.parsers.SAXParserFactory;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.List;
 
 
 public class Server extends Thread 
@@ -29,7 +30,7 @@ public class Server extends Thread
 	 * @param port
 	 * @throws IOException
 	 */
-	public Server(int port, int botPort, Retriever ret) throws IOException 
+	public Server(int port, int botPort, Retriever ret, Map<String,Double> traffic) throws IOException 
 	{
 		if (port <= 1024 || botPort <= 1024) 
 		{
@@ -44,10 +45,12 @@ public class Server extends Thread
 			_botSocket = new Socket("localhost", botPort);
 			_botConnectionSuccess = true;
 			_trafficInput = new BufferedReader(new InputStreamReader(_botSocket.getInputStream()));
-			_trafficData = new ConcurrentHashMap<>();
+			_trafficData = traffic;
 		}
 		catch(ConnectException e)
 		{
+                    System.out.println("unable to connect");
+                    System.out.println(e.getMessage());
 			_botConnectionSuccess = false;
 		}
                 r=ret;
@@ -73,7 +76,7 @@ public class Server extends Thread
                             System.out.println("waiting for a connection");
 				Socket clientConnection = _socket.accept();
 				System.out.println("Connected to client.");
-				new ClientHandler(_clients, clientConnection,r,f.newSAXParser()).start();
+				new ClientHandler(_clients, clientConnection,r,f.newSAXParser(),_trafficData).start();
 			}
 			catch(IOException e)
 			{
@@ -122,7 +125,9 @@ public class Server extends Thread
 						
 						if(traffic >= 1)
 						{
-							_trafficData.put(data[0], traffic);
+                                                    List<String> ids = r.getNamedStreetIDs(data[0]);
+                                                    for(String s : ids)
+                                                        _trafficData.put(s, traffic);
 						}
 					}
 				}

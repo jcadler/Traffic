@@ -5,16 +5,16 @@ import org.xml.sax.helpers.DefaultHandler;
 import java.io.InputStream;
 
 /**
- *
+ * Thread which parses the incoming xml from the client/server
  * @author john
  */
 public class XMLParseThread extends Thread
 {
     private SAXParser p;
-    private DefaultHandler handle;
+    private DefaultHandler handle;//the handler for the parser
     private InputStream stream;
-    private boolean running;
-    private String handlerWaiter;
+    private boolean running; //indicates whether the current thread is running
+    private String handlerWaiter; //the object on which the handler waits
     private final String wait="wait";
     
     public XMLParseThread(SAXParser parse, DefaultHandler h, InputStream s, String waiter)
@@ -32,14 +32,14 @@ public class XMLParseThread extends Thread
         running =true;
         try
         {
-            p.parse(stream,handle);
+            p.parse(stream,handle);//start the parser
         }
         catch(Exception e)
         {
             System.out.println(e.getMessage());
             e.printStackTrace();
         }
-        notRunning();
+        notRunning();//indicate that the parser is no longer running
         synchronized(handlerWaiter)
         {
             handlerWaiter.notifyAll();
@@ -47,14 +47,25 @@ public class XMLParseThread extends Thread
         return;
     }
     
+    /**
+     * indicates to everyone that the thread is no longer running
+     */
     private void notRunning()
     {
         synchronized(wait)
         {
             running=false;
+            synchronized(handlerWaiter)
+            {
+                handlerWaiter.notifyAll();
+            }
         }
     }
     
+    /**
+     * indicates whether the thread is currently running
+     * @return 
+     */
     public boolean running()
     {
         synchronized(wait)
